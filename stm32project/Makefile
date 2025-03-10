@@ -1,29 +1,26 @@
-# Makefile to compile and link code for STM32F446RE
+# Makefile to run CMake with a specific toolchain file
 
-# Compiler and options configuration
-CC = arm-none-eabi-gcc
-CFLAGS = -mcpu=cortex-m4 -mthumb -nostdlib -Wl,--no-warn-rwx-segments
-LDFLAGS = -T linker_script.ld
+# Variables
+CMAKE_TOOLCHAIN_FILE = ../gcc-arm-none-eabi.cmake
+BUILD_DIR = build
+EXECUTABLE_FILE = blink
+OPNEOCD_PATHS = -f interface/stlink.cfg -f target/stm32f4x.cfg
 
-# Source files
-SRCS = main.c startup.c
-OBJS = $(SRCS:.c=.o)
+# Targets
+all: cmake make
 
-# Executable name
-TARGET = blink.elf
+cmake:
+	mkdir -p $(BUILD_DIR)
+	cd $(BUILD_DIR) && cmake -DCMAKE_TOOLCHAIN_FILE=$(CMAKE_TOOLCHAIN_FILE) ..
 
-all: $(TARGET)
-
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $@
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+make:
+	$(MAKE) -C $(BUILD_DIR)
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -rf $(BUILD_DIR)
+
+.PHONY: all cmake clean
 
 flash:
-	openocd -f interface/stlink.cfg -f target/stm32f4x.cfg -c "program blink.elf verify reset exit"
+	openocd $(OPNEOCD_PATHS) -c "program $(BUILD_DIR)/$(EXECUTABLE_FILE).elf verify reset exit"
 
-ex-flash: clean all flash
