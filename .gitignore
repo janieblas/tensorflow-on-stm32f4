@@ -1,0 +1,3 @@
+# Archivos objeto/compilados
+*.o
+*.elf
